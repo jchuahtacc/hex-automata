@@ -13,10 +13,14 @@ class Hex {
         this.y = y;
     }
 
+    // Callback when the interior of a hexagon is clicked
     click() {
         console.log("click", this);
     }
 
+    // Callback when the edge of a hexagon is clicked
+    // dx and dy represent the offset of the hex bordering
+    // the edge that was clicked
     edgeClick(dx, dy) {
         console.log("edge click " + dx +"," + dy, this);
     }
