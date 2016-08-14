@@ -17,8 +17,8 @@ class Hex {
         console.log("click", this);
     }
 
-    edgeClick(degree) {
-        console.log(degree + " degree click", this);
+    edgeClick(dx, dy) {
+        console.log("edge click " + dx +"," + dy, this);
     }
 
     // A callback that returns the HTML of svg elements representing a hex edge.
@@ -55,44 +55,32 @@ HexMap = function(svgSelector) {
     var _offsetY = 0;
     var _edge = 10;
     var _map = { };
-    var _traps = [ ];
+    var _trapezoid = "";
     var _innerHex = "";
     var _svg = null;
     var _hex = Hex;
 
+    // Build outside hex path
     function _buildHexString() {
         var height = _radius / 2 * Math.sqrt(3);
         var halfRad = _radius / 2;
         return "M " + -halfRad + " " + -height + " L " + halfRad + " " + -height + " L " + _radius + " 0 " + " L " + halfRad + " " + height + " L " + -halfRad + " " + height + " L " + -_radius + " 0 Z"; 
     }
 
+    // Build translation for a hex from hex coordinate to screen position
     function _translate(d) {
         var translate = "translate(" + Math.floor(d.x * _dColX + _offsetX) + " " + Math.floor(d.y * _dRow + d.x * _dColY + _offsetY) + ")";
         return translate;
     }
 
-    function _makeTrapezoids() {
-        var traps = [ ];
-        if (_radius > 15) {
-            var rad = _radius - _edge;
-            for (var deg = 0; deg < 360; deg = deg + 60) {
-                var string = "M ";
-                var cos = Math.cos(deg * Math.PI / 180);
-                var sin = -Math.sin(deg * Math.PI / 180);
-                string += Math.floor(cos * rad) + " " + Math.floor(sin * rad);
-                string += " L " + Math.floor(cos * _radius) + " " + Math.floor(sin * _radius);
-                var cos2 = Math.cos((deg + 60) * Math.PI / 180);
-                var sin2 = -Math.sin((deg + 60) * Math.PI / 180);
-                string += " L " + Math.floor(cos2 * _radius) + " " + Math.floor(sin2 * _radius);
-                string += " L " + Math.floor(cos2 * rad) + " " + Math.floor(sin2 * rad) + " Z ";
-                traps.push(string);
-            }
-        }
-        return traps;
+    // Build trapezoid path for edge click detection
+    function _makeTrapezoid() {
+        return "M 0 " + _edge + " L " + Math.floor(_edge / 2.2) + " 0 L " + Math.floor(_radius - _edge / 2.2) + " 0 L " + _radius + " " + _edge + " Z "; 
     }
 
+    // Build inside hex path for center click detection
     function _makeInnerHex() {
-        var rad = this._radius - this._edge;
+        var rad = _radius - _edge;
         var string = "M " + rad + " 0 ";
         for (var deg = 60; deg < 360; deg = deg + 60) {
             string += "L " + Math.floor(Math.cos(deg * Math.PI / 180) * rad) + " " + Math.floor(Math.sin(deg * Math.PI / 180) * -rad) + " ";
@@ -101,7 +89,7 @@ HexMap = function(svgSelector) {
         return string;
     }
 
-
+    // Force recomputation of constants, upon edge or radius changes
     function _recompute() {
         _dRow = _radius * Math.sqrt(3);
         _dColX = _radius * 1.5;
@@ -109,28 +97,33 @@ HexMap = function(svgSelector) {
         _offsetX = _radius;
         _offsetY = _radius / 2 * Math.sqrt(3);
         _hexString = _buildHexString();
-        _traps = _makeTrapezoids();
+        _trapezoid = _makeTrapezoid();
         _innerHex = _makeInnerHex();
     }
 
+    // radius property, radius or edge length of hexagon
     Object.defineProperty(HexMap, 'radius', {
         get : function() { return _radius; },
         set : function(val) { _radius = val; _recompute(); draw(); }
     });
 
+    // edge property, interior width of hexagon for click detection or edge rendering
     Object.defineProperty(HexMap, 'edge', {
         get : function() { return _edge; },
         set : function(val) { _edge = val; _recompute(); draw(); }
     });
 
+    // hex property, prototype of hexes for building new hex maps
     Object.defineProperty(HexMap, 'hex', {
         get : function() { return _hex; },
         set : function(val) { _hex = val; _recompute(); draw(); }
     });
 
-    HexMap.prototype.neighbors = function(row, col) {
+    // Returns an array of neighboring cells
+    HexMap.prototype.neighbors = function(x, y) {
     }
 
+    // Returns an array of all hexes
     HexMap.prototype.toArray = function() {
         var hexes = [ ];
         for (var key in _map) {
@@ -139,6 +132,7 @@ HexMap = function(svgSelector) {
         return hexes;
     }
 
+    // Initializes a rectangular configuration for the hex map, using the specified hex prototype
     HexMap.prototype.buildRect = function(width, height) {
         for (var i = 0; i < height; i++) {
             for (var j = 0; j < (i + 1) * 2 - 1 && j < width; j++) {
@@ -161,6 +155,7 @@ HexMap = function(svgSelector) {
         this.draw();
     }
     
+    // Returns a hex in the map, or undefined if an invalid coordinate was specified
     HexMap.prototype.get = function(x, y) {
         var key = x + "," + y;
         if (key in _map) {
@@ -170,6 +165,7 @@ HexMap = function(svgSelector) {
         }
     }
 
+    // Sets a map cell to the given hex
     HexMap.prototype.set = function(x, y, hex) {
         var key = x + "," + y;
         _map[key] = hex;
@@ -186,17 +182,25 @@ HexMap = function(svgSelector) {
 
     var _offsets = [ { dx : 1, dy : 0 }, { dx : 0, dy : -1 }, { dx : -1, dy : -1 }, { dx : -1, dy: 0 }, { dx : 0, dy : 1 }, { dx : 1, dy : 1 }];
 
+    // Given an offset, returns the degree facing of the offset
+    // For example, if dx is 1 and dy is 0, 30 degrees is returned
     HexMap.prototype.offsetToDegrees = function(dx, dy) {
         return _offsetDict[dx + ","+ dy];
     }
 
+    // Re-renders the SVG of the hex map
     HexMap.prototype.draw = function() {
+        //Clear previous svg elements
         _svg.select("path").remove();
+
+        // Create Hex group
         var groups = _svg.selectAll("path")
             .data(this.toArray())
             .enter()
             .append("g")
         groups.attr("transform", _translate);
+
+        // Create border
         groups.append("path")
             .attr("x", function(d) { return d.x; })
             .attr("y", function(d) { return d.y; })
@@ -205,25 +209,35 @@ HexMap = function(svgSelector) {
             .attr("fill", "none")
             .attr("stroke-width", 3)
             .attr("pointer-events", "visible");
-        for (var index in this._traps) {
-            groups.append("path")
-                .attr("d", traps[index])
-                .attr("stroke", "none")
-                .attr("pointer-events", "visible")
-                .attr("fill", "none")
-                .attr("degree", function (d) { return Math.floor(index * 60 + 30); })
-                .on("click", function(d, i) { d.edgeClick.apply(d, [Math.floor(parseInt(this.getAttribute("degree")))]); }); 
-        }
 
-
+        // Render Hex edges
         for (var i in _offsets) {
             groups.append("g")
                 .attr("transform", "rotate(" + Math.floor(-1 * (90 + this.offsetToDegrees(_offsets[i].dx, _offsets[i].dy))) + ") translate(" + -_radius / 2 + " " + -_dColY + ") translate(0 " + -_edge + ")")
-                .html(function(d) { return d.renderEdge(_offsets[i].dx, _offsets[i].dy, _radius, _edge); });
+                .attr("dx", _offsets[i].dx)
+                .attr("dy", _offsets[i].dy)
+                .html(function(d) { return d.renderEdge(parseInt(this.getAttribute("dx")), parseInt(this.getAttribute("dy")), _radius, _edge); });
         }
 
-        groups.append("path")
-            .attr("d", this._innerHex)
+        // Render click listener group
+        var clickGroup = groups.append("g");
+
+        // Render edge click regions
+        for (var i in _offsets) {
+            clickGroup.append("path")
+                .attr("blah", "blah")
+                .attr("d", _trapezoid)
+                .attr("transform", "rotate(" + Math.floor(-1 * (90 + this.offsetToDegrees(_offsets[i].dx, _offsets[i].dy))) + ") translate(" + -_radius / 2 + " " + -_dColY + ") translate(0 " + -_edge + ")")
+                .attr("fill", "none")
+                .attr("dx", _offsets[i].dx)
+                .attr("dy", _offsets[i].dy)
+                .attr("pointer-events", "visible")
+                .on("click", function(d, i) { d.edgeClick( parseInt(this.getAttribute("dx")), parseInt(this.getAttribute("dy")) ); });
+        }
+
+        // Render inside hex click region
+        clickGroup.append("path")
+            .attr("d", _innerHex)
             .attr("stroke", "none")
             .attr("pointer-events", "visible")
             .attr("fill", "none")
