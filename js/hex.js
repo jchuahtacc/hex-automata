@@ -1,102 +1,59 @@
+// Hex.js
+//
+// ECMAScript 6
 
-var Hex = function(row, col) {
-    this.row = row;
-    this.col = col;
-    this.clickCount = 0;
-    Hex.prototype.click = function() {
+class Hex {
+    constructor(row, col) {
+        this.row = row;
+        this.col = col;
+    }
+
+    click() {
         console.log("click", this);
     }
-    Hex.prototype.edgeClick = function(degree) {
+
+    edgeClick(degree) {
         console.log(degree + " degree click", this);
     }
 }
 
-var HexMap = function(svgSelector) {
-    var radius = 60;
-    var svg = d3.select(svgSelector);
-    var hexString = "";
-    var dRow = 120;
-    var dColX = 180;
-    var dColY = 180;
-    var offsetX = 0;
-    var offsetY = 0;
-    var edgeWidth = 10;
- 
-    function buildHexString() {
-        var height = radius / 2 * Math.sqrt(3);
-        var halfRad = radius / 2;
-        return "M " + -halfRad + " " + -height + " L " + halfRad + " " + -height + " L " + radius + " 0 " + " L " + halfRad + " " + height + " L " + -halfRad + " " + height + " L " + -radius + " 0 Z"; 
+HexMap = function(svgSelector) {
+    var _radius = 60;
+    var _dRow = 120;
+    var _dColX = 180;
+    var _dColY = 180;
+    var _offsetX = 0;
+    var _offsetY = 0;
+    var _edge = 10;
+    var _map = { };
+    var _traps = [ ];
+    var _innerHex = "";
+    var _svg = null;
+
+    function _buildHexString() {
+        var height = _radius / 2 * Math.sqrt(3);
+        var halfRad = _radius / 2;
+        return "M " + -halfRad + " " + -height + " L " + halfRad + " " + -height + " L " + _radius + " 0 " + " L " + halfRad + " " + height + " L " + -halfRad + " " + height + " L " + -_radius + " 0 Z"; 
     }
 
-    function translate(d) {
-        var translate = "translate(" + Math.floor(d.col * dColX + offsetX) + " " + Math.floor(d.row * dRow + d.col * dColY + offsetY) + ")";
+    function _translate(d) {
+        var translate = "translate(" + Math.floor(d.col * _dColX + _offsetX) + " " + Math.floor(d.row * _dRow + d.col * _dColY + _offsetY) + ")";
         return translate;
     }
 
-    HexMap.prototype.map = { };
-
-    HexMap.prototype.neighbors = function(row, col) {
-    }
-
-    HexMap.prototype.toArray = function() {
-        var hexes = [ ];
-        for (var key in this.map) {
-            hexes.push(this.map[key]);
-        }
-        return hexes;
-    }
-
-    HexMap.prototype.setRadius = function(radius) {
-        this.radius = radius;
-        dRow = radius * Math.sqrt(3);
-        dColX = radius * 1.5;
-        dColY = -radius / 2 * Math.sqrt(3);
-        offsetX = radius;
-        offsetY = radius / 2 * Math.sqrt(3);
-        hexString = buildHexString();
-        this.draw();
-    }
-
-    HexMap.prototype.setEdgeWidth = function(edgeWidth) {
-        this.edgeWidth = edgeWidth;
-        this.draw();
-    }
-
-    HexMap.prototype.buildRect = function(rows, cols) {
-        for (var i = 0; i < rows; i++) {
-            for (var j = 0; j < (i + 1) * 2 - 1 && j < cols; j++) {
-                var key = j + "," + i;
-                if (!(key in this.map)) {
-                    this.map[key] = new Hex(i, j);
-                }
-            }
-        }
-        var row = rows;
-        for (var i = 1; i < cols; i = i + 2) {
-            for (var j = i; j < cols; j++) {
-                var key = j + "," + row;
-                if (!(key in this.map)) {
-                    this.map[key] = new Hex(row, j);
-                }
-            }
-            row = row + 1;
-        }
-        this.draw();
-    }
-
-    function makeTrapezoids() {
+    function _makeTrapezoids() {
         var traps = [ ];
-        if (radius > 15) {
-            var rad = radius - edgeWidth;
+        if (_radius > 15) {
+            var rad = _radius - _edge;
             for (var deg = 0; deg < 360; deg = deg + 60) {
                 var string = "M ";
                 var cos = Math.cos(deg * Math.PI / 180);
                 var sin = -Math.sin(deg * Math.PI / 180);
                 string += Math.floor(cos * rad) + " " + Math.floor(sin * rad);
-                string += " L " + Math.floor(cos * radius) + " " + Math.floor(sin * radius);
+                string += " L " + Math.floor(cos * _radius) + " " + Math.floor(sin * _radius);
                 var cos2 = Math.cos((deg + 60) * Math.PI / 180);
                 var sin2 = -Math.sin((deg + 60) * Math.PI / 180);
-                string += " L " + Math.floor(cos2 * radius) + " " + Math.floor(sin2 * radius);
+                string += " L " + Math.floor(cos2 * _radius) + " " + Math.floor(sin2 * _radius);
                 string += " L " + Math.floor(cos2 * rad) + " " + Math.floor(sin2 * rad) + " Z ";
                 traps.push(string);
             }
@@ -104,8 +61,8 @@ var HexMap = function(svgSelector) {
         return traps;
     }
 
-    function makeInnerHex() {
-        var rad = radius - edgeWidth;
+    function _makeInnerHex() {
+        var rad = this._radius - this._edge;
         var string = "M " + rad + " 0 ";
         for (var deg = 60; deg < 360; deg = deg + 60) {
             string += "L " + Math.floor(Math.cos(deg * Math.PI / 180) * rad) + " " + Math.floor(Math.sin(deg * Math.PI / 180) * -rad) + " ";
@@ -114,27 +71,79 @@ var HexMap = function(svgSelector) {
         return string;
     }
 
+
+    function _recompute() {
+        _dRow = _radius * Math.sqrt(3);
+        _dColX = _radius * 1.5;
+        _dColY = -_radius / 2 * Math.sqrt(3);
+        _offsetX = _radius;
+        _offsetY = _radius / 2 * Math.sqrt(3);
+        _hexString = _buildHexString();
+        _traps = _makeTrapezoids();
+        _innerHex = _makeInnerHex();
+    }
+
+    Object.defineProperty(HexMap, 'radius', {
+        get : function() { return _radius; },
+        set : function(val) { _radius = val; _recompute(); draw(); }
+    });
+
+    Object.defineProperty(HexMap, 'edge', {
+        get : function() { return _edge; },
+        set : function(val) { _edge = val; _recompute(); draw(); }
+    });
+
+    HexMap.prototype.neighbors = function(row, col) {
+    }
+
+    HexMap.prototype.toArray = function() {
+        var hexes = [ ];
+        for (var key in _map) {
+            hexes.push(_map[key]);
+        }
+        return hexes;
+    }
+
+    HexMap.prototype.buildRect = function(rows, cols) {
+        for (var i = 0; i < rows; i++) {
+            for (var j = 0; j < (i + 1) * 2 - 1 && j < cols; j++) {
+                var key = j + "," + i;
+                if (!(key in _map)) {
+                    _map[key] = new Hex(i, j);
+                }
+            }
+        }
+        var row = rows;
+        for (var i = 1; i < cols; i = i + 2) {
+            for (var j = i; j < cols; j++) {
+                var key = j + "," + row;
+                if (!(key in _map)) {
+                    _map[key] = new Hex(row, j);
+                }
+            }
+            row = row + 1;
+        }
+        this.draw();
+    }
     HexMap.prototype.draw = function() {
-        svg.select("path").remove();
-        var groups = svg.selectAll("path")
+        _svg.select("path").remove();
+        var groups = _svg.selectAll("path")
             .data(this.toArray())
             .enter()
             .append("g");
         groups.append("path")
             .attr("row", function(d) { return d.row; })
             .attr("col", function(d) { return d.col; })
-            .attr("d", hexString)
-            .attr("transform", translate)
+            .attr("d", _hexString)
+            .attr("transform", _translate)
             .attr("stroke", "black")
             .attr("fill", "none")
             .attr("stroke-width", 3)
             .attr("pointer-events", "visible");
-        var traps = makeTrapezoids();
-        var innerHex = makeInnerHex();
-        for (var index in traps) {
+        for (var index in this._traps) {
             groups.append("path")
                 .attr("d", traps[index])
-                .attr("transform", translate)
+                .attr("transform", _translate)
                 .attr("stroke", "none")
                 .attr("pointer-events", "visible")
                 .attr("fill", "none")
@@ -142,15 +151,17 @@ var HexMap = function(svgSelector) {
                 .on("click", function(d, i) { d.edgeClick.apply(d, [Math.floor(parseInt(this.getAttribute("degree")))]); }); 
         }
         groups.append("path")
-            .attr("d", innerHex)
-            .attr("transform", translate)
+            .attr("d", this._innerHex)
+            .attr("transform", _translate)
             .attr("stroke", "none")
             .attr("pointer-events", "visible")
             .attr("fill", "none")
             .on("click", function(d, i) { d.click.apply(d); });
     }
 
-    this.setRadius(60);
+    _svg = d3.select(svgSelector);
+    _recompute();
+    this.draw();
 }
 
 var map = null;
