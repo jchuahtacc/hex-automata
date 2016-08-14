@@ -137,7 +137,17 @@ HexMap = function(svgSelector) {
     });
 
     // Returns an array of neighboring cells
+    // Each array element is an object with fields "dx" and "dy" representing
+    // the offset of the neighbor and field "hex" containing the neighbor
     HexMap.prototype.neighbors = function(x, y) {
+        var result = [];
+        for (var i in _offsets) {
+            var hex = this.get(_offsets[i].dx, _offsets[i].dy);
+            if (hex) {
+                result.push({ dx : _offsets[i].dx, dy : _offsets[i].dy, hex : hex});
+            }
+        }
+        return result;
     }
 
     // Returns an array of all hexes
@@ -284,5 +294,5 @@ document.addEventListener("DOMContentLoaded", function(event) {
     map = new HexMap("#hexmap");
     d3.select("#hexmap").attr("width", 600).attr("height", 600);
     map.buildRect(5, 5);
-    var hex = map.get(1, 1);
+    console.log(map.neighbors(0, 0));
 });
