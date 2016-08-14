@@ -28,8 +28,8 @@ class Hex {
     // height represents the height of a hex edge
     renderEdge(dx, dy, width, height) {
         var g = d3.select(document.createElement("g"));
-        var fill = "steelblue";
         var pair = dx + "," + dy;
+        var fill = "";
         switch(pair) {
             case "1,0" : fill = "red"; break;
             case "0,-1" : fill = "orange"; break;
@@ -42,6 +42,18 @@ class Hex {
             .attr("width", width)
             .attr("height", height)
             .attr("fill", fill);
+        return g.html();
+    }
+
+    // A callback that returns the HTML of svg elements representing the hexagon body
+    // The HTML of the region returned will be rendered as a rectangle of width:
+    //
+    renderHex(radius) {
+        var g = d3.select(document.createElement("g"));
+        g.append("rect")
+            .attr("width", radius * 2)
+            .attr("height", radius * Math.sqrt(3))
+            .attr("fill", "steelblue");
         return g.html();
     }
 }
@@ -191,24 +203,35 @@ HexMap = function(svgSelector) {
     // Re-renders the SVG of the hex map
     HexMap.prototype.draw = function() {
         //Clear previous svg elements
+        _svg.select("defs").remove();
         _svg.select("path").remove();
+        _svg.append("defs")
+            .append("clipPath")
+            .attr("id", "hexPath")
+            .append("path")
+            .attr("d", _hexString);
 
         // Create Hex group
-        var groups = _svg.selectAll("path")
+        var groups = _svg.selectAll("g")
             .data(this.toArray())
             .enter()
             .append("g")
+            .attr("x", function(d) { return d.x; })
+            .attr("y", function(d) { return d.y; });
         groups.attr("transform", _translate);
+        groups.attr("clip-path", "url(#hexPath)");
 
         // Create border
         groups.append("path")
-            .attr("x", function(d) { return d.x; })
-            .attr("y", function(d) { return d.y; })
             .attr("d", _hexString)
             .attr("stroke", "black")
             .attr("fill", "none")
             .attr("stroke-width", 3)
             .attr("pointer-events", "visible");
+
+        groups.append("g")
+            .attr("transform", "translate(" + -_radius + " " + Math.floor(-_radius / 2 * Math.sqrt(3)) + " ) ")
+            .html(function(d) { return d.renderHex(_radius); });
 
         // Render Hex edges
         for (var i in _offsets) {
