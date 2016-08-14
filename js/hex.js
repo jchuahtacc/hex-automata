@@ -2,6 +2,11 @@
 //
 // ECMAScript 6
 
+// Hexes
+//
+// The hex coordinate system uses a skewed x, y coordinates, where increasing whole values of y are
+// visually are below the previous value of y, and increasing values of x are above and to the right
+// of the previous value of x.
 class Hex {
     constructor(x, y) {
         this.x = x;
@@ -14,6 +19,30 @@ class Hex {
 
     edgeClick(degree) {
         console.log(degree + " degree click", this);
+    }
+
+    // A callback that returns the HTML of svg elements representing a hex edge.
+    // dx and dy are the offset representing the edge being rendered.
+    // For example, if dx and dy are both 1, the lower right edge is being rendered
+    // width represents the width of a hex edge
+    // height represents the height of a hex edge
+    renderEdge(dx, dy, width, height) {
+        var g = d3.select(document.createElement("g"));
+        var fill = "steelblue";
+        var pair = dx + "," + dy;
+        switch(pair) {
+            case "1,0" : fill = "red"; break;
+            case "0,-1" : fill = "orange"; break;
+            case "-1,-1" : fill = "yellow"; break;
+            case "-1,0" : fill = "green"; break;
+            case "0,1" : fill = "blue"; break;
+            case "1,1" : fill = "purple"; break;
+        }
+        g.append("rect")
+            .attr("width", width)
+            .attr("height", height)
+            .attr("fill", fill);
+        return g.html();
     }
 }
 
@@ -131,19 +160,47 @@ HexMap = function(svgSelector) {
         }
         this.draw();
     }
+    
+    HexMap.prototype.get = function(x, y) {
+        var key = x + "," + y;
+        if (key in _map) {
+            return _map[key];
+        } else {
+            return undefined;
+        }
+    }
+
+    HexMap.prototype.set = function(x, y, hex) {
+        var key = x + "," + y;
+        _map[key] = hex;
+    }
+
+    var _offsetDict = { 
+        "1,0" : 30,
+        "0,-1" : 90,
+        "-1,-1" : 150,
+        "-1,0" : 210,
+        "0,1" : 270,
+        "1,1" : 330
+    };
+
+    var _offsets = [ { dx : 1, dy : 0 }, { dx : 0, dy : -1 }, { dx : -1, dy : -1 }, { dx : -1, dy: 0 }, { dx : 0, dy : 1 }, { dx : 1, dy : 1 }];
+
+    HexMap.prototype.offsetToDegrees = function(dx, dy) {
+        return _offsetDict[dx + ","+ dy];
+    }
 
     HexMap.prototype.draw = function() {
-        console.log("array", this.toArray());
         _svg.select("path").remove();
         var groups = _svg.selectAll("path")
             .data(this.toArray())
             .enter()
-            .append("g");
+            .append("g")
+        groups.attr("transform", _translate);
         groups.append("path")
             .attr("x", function(d) { return d.x; })
             .attr("y", function(d) { return d.y; })
             .attr("d", _hexString)
-            .attr("transform", _translate)
             .attr("stroke", "black")
             .attr("fill", "none")
             .attr("stroke-width", 3)
@@ -151,16 +208,22 @@ HexMap = function(svgSelector) {
         for (var index in this._traps) {
             groups.append("path")
                 .attr("d", traps[index])
-                .attr("transform", _translate)
                 .attr("stroke", "none")
                 .attr("pointer-events", "visible")
                 .attr("fill", "none")
                 .attr("degree", function (d) { return Math.floor(index * 60 + 30); })
                 .on("click", function(d, i) { d.edgeClick.apply(d, [Math.floor(parseInt(this.getAttribute("degree")))]); }); 
         }
+
+
+        for (var i in _offsets) {
+            groups.append("g")
+                .attr("transform", "rotate(" + Math.floor(-1 * (90 + this.offsetToDegrees(_offsets[i].dx, _offsets[i].dy))) + ") translate(" + -_radius / 2 + " " + -_dColY + ") translate(0 " + -_edge + ")")
+                .html(function(d) { return d.renderEdge(_offsets[i].dx, _offsets[i].dy, _radius, _edge); });
+        }
+
         groups.append("path")
             .attr("d", this._innerHex)
-            .attr("transform", _translate)
             .attr("stroke", "none")
             .attr("pointer-events", "visible")
             .attr("fill", "none")
@@ -178,4 +241,5 @@ document.addEventListener("DOMContentLoaded", function(event) {
     map = new HexMap("#hexmap");
     d3.select("#hexmap").attr("width", 600).attr("height", 600);
     map.buildRect(5, 5);
+    var hex = map.get(1, 1);
 });
