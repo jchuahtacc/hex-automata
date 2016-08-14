@@ -46,8 +46,9 @@ class Hex {
     }
 
     // A callback that returns the HTML of svg elements representing the hexagon body
-    // The HTML of the region returned will be rendered as a rectangle of width:
-    //
+    // The HTML of the region returned will be rendered as a rectangle, with a
+    // width = radius * 2 and height = radius * Math.sqrt(3)
+    // The resulting group will be rendered and clipped to the surrounding hexagon
     renderHex(radius) {
         var g = d3.select(document.createElement("g"));
         g.append("rect")
@@ -229,6 +230,7 @@ HexMap = function(svgSelector) {
             .attr("stroke-width", 3)
             .attr("pointer-events", "visible");
 
+        // Render hexagon background
         groups.append("g")
             .attr("transform", "translate(" + -_radius + " " + Math.floor(-_radius / 2 * Math.sqrt(3)) + " ) ")
             .html(function(d) { return d.renderHex(_radius); });
