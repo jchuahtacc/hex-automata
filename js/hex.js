@@ -29,6 +29,7 @@ HexMap = function(svgSelector) {
     var _traps = [ ];
     var _innerHex = "";
     var _svg = null;
+    var _hex = Hex;
 
     function _buildHexString() {
         var height = _radius / 2 * Math.sqrt(3);
@@ -93,6 +94,11 @@ HexMap = function(svgSelector) {
         set : function(val) { _edge = val; _recompute(); draw(); }
     });
 
+    Object.defineProperty(HexMap, 'hex', {
+        get : function() { return _hex; },
+        set : function(val) { _hex = val; _recompute(); draw(); }
+    });
+
     HexMap.prototype.neighbors = function(row, col) {
     }
 
@@ -109,7 +115,7 @@ HexMap = function(svgSelector) {
             for (var j = 0; j < (i + 1) * 2 - 1 && j < cols; j++) {
                 var key = j + "," + i;
                 if (!(key in _map)) {
-                    _map[key] = new Hex(i, j);
+                    _map[key] = new _hex(i, j);
                 }
             }
         }
@@ -118,7 +124,7 @@ HexMap = function(svgSelector) {
             for (var j = i; j < cols; j++) {
                 var key = j + "," + row;
                 if (!(key in _map)) {
-                    _map[key] = new Hex(row, j);
+                    _map[key] = new _hex(row, j);
                 }
             }
             row = row + 1;
