@@ -3,9 +3,9 @@
 // ECMAScript 6
 
 class Hex {
-    constructor(row, col) {
-        this.row = row;
-        this.col = col;
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
     }
 
     click() {
@@ -38,7 +38,7 @@ HexMap = function(svgSelector) {
     }
 
     function _translate(d) {
-        var translate = "translate(" + Math.floor(d.col * _dColX + _offsetX) + " " + Math.floor(d.row * _dRow + d.col * _dColY + _offsetY) + ")";
+        var translate = "translate(" + Math.floor(d.x * _dColX + _offsetX) + " " + Math.floor(d.y * _dRow + d.x * _dColY + _offsetY) + ")";
         return translate;
     }
 
@@ -110,36 +110,38 @@ HexMap = function(svgSelector) {
         return hexes;
     }
 
-    HexMap.prototype.buildRect = function(rows, cols) {
-        for (var i = 0; i < rows; i++) {
-            for (var j = 0; j < (i + 1) * 2 - 1 && j < cols; j++) {
+    HexMap.prototype.buildRect = function(width, height) {
+        for (var i = 0; i < height; i++) {
+            for (var j = 0; j < (i + 1) * 2 - 1 && j < width; j++) {
                 var key = j + "," + i;
                 if (!(key in _map)) {
-                    _map[key] = new _hex(i, j);
+                    _map[key] = new _hex(j, i);
                 }
             }
         }
-        var row = rows;
-        for (var i = 1; i < cols; i = i + 2) {
-            for (var j = i; j < cols; j++) {
-                var key = j + "," + row;
+        var y = height;
+        for (var i = 1; i < width; i = i + 2) {
+            for (var j = i; j < width; j++) {
+                var key = j + "," + y;
                 if (!(key in _map)) {
-                    _map[key] = new _hex(row, j);
+                    _map[key] = new _hex(j, y);
                 }
             }
-            row = row + 1;
+            y = y + 1;
         }
         this.draw();
     }
+
     HexMap.prototype.draw = function() {
+        console.log("array", this.toArray());
         _svg.select("path").remove();
         var groups = _svg.selectAll("path")
             .data(this.toArray())
             .enter()
             .append("g");
         groups.append("path")
-            .attr("row", function(d) { return d.row; })
-            .attr("col", function(d) { return d.col; })
+            .attr("x", function(d) { return d.x; })
+            .attr("y", function(d) { return d.y; })
             .attr("d", _hexString)
             .attr("transform", _translate)
             .attr("stroke", "black")
