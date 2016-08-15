@@ -287,12 +287,3 @@ HexMap = function(svgSelector) {
     _recompute();
     this.draw();
 }
-
-var map = null;
-
-document.addEventListener("DOMContentLoaded", function(event) {
-    map = new HexMap("#hexmap");
-    d3.select("#hexmap").attr("width", 600).attr("height", 600);
-    map.buildRect(5, 5);
-    console.log(map.neighbors(0, 0));
-});
