@@ -195,6 +195,8 @@ HexMap = function(svgSelector) {
     // Sets a map cell to the given hex
     HexMap.prototype.set = function(x, y, hex) {
         var key = x + "," + y;
+        hex.x = x;
+        hex.y = y;
         _map[key] = hex;
     }
 
