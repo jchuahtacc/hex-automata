@@ -24,7 +24,9 @@ var map = null;
 
 document.addEventListener("DOMContentLoaded", function(event) {
     map = new HexMap("#hexmap");
+    map.radius = 30;
+    map.edge = 5;
     map.hex = ConwayHex;
-    d3.select("#hexmap").attr("width", 600).attr("height", 600);
-    map.buildRect(5, 5);
+    d3.select("#hexmap").attr("width", 1900).attr("height", 1050);
+    map.buildRect(41, 19);
 });
