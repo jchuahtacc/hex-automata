@@ -195,9 +195,15 @@ HexMap = function(svgSelector) {
     // Sets a map cell to the given hex
     HexMap.prototype.set = function(x, y, hex) {
         var key = x + "," + y;
-        hex.x = x;
-        hex.y = y;
-        _map[key] = hex;
+        if (hex) {
+            hex.x = x;
+            hex.y = y;
+            _map[key] = hex;
+        } else {
+            console.log("deleted!");
+            delete _map[key];
+        }
+        this.draw();
     }
 
     var _offsetDict = { 
@@ -218,47 +224,57 @@ HexMap = function(svgSelector) {
     }
 
     HexMap.prototype.draw = function() {
-        //Clear previous svg elements
-        _svg.select("defs").remove();
-        _svg.select("path").remove();
-        _svg.append("defs")
-            .append("clipPath")
-            .attr("id", "hexPath")
-            .append("path")
-            .attr("d", _hexString);
-       this._drawHexes(this.toArray());
+      this._drawHexes(this.toArray());
     }
 
-    HexMap.prototype.drawCell = function(x, y) {
+    HexMap.prototype.redrawCell = function(x, y) {
         var hex = this.get(x, y);
         if (hex) {
             var selector = "g[x='" + x + "'][y='" + y + "']";
             var g = _svg.select(selector);
             g.remove();
-            hexes = [ ];
-            hexes.push(hex);
-            this._drawHexes(hexes);
+            this.draw();
         }
     }
 
     // Re-renders the SVG of the hex map
     HexMap.prototype._drawHexes = function(hexes) {
-        // Create Hex group
-        var groups = _svg.selectAll("g")
-            .data(hexes)
+         //Clear previous svg elements
+
+         console.log(hexes);
+        _svg.select("defs").remove();
+        _svg.append("defs")
+            .append("clipPath")
+            .attr("id", "hexPath")
+            .append("path")
+            .attr("d", _hexString);
+
+        // Create data binding 
+        var dataSelect = _svg.selectAll("g")
+            .data(hexes, function(d) { return d; });
+
+        // On new data element, create a group representing the hex
+        // and merge it
+        dataSelect
             .enter()
             .append("g")
-            .attr("x", function(d) { return d.x; })
-            .attr("y", function(d) { return d.y; });
-        groups.attr("transform", _translate);
-        groups.attr("clip-path", "url(#hexPath)");
-        // Create border
-        groups.append("path")
+            .attr("x", function(d) { console.log("Adding group for ", d); return d.x; })
+            .attr("y", function(d) { return d.y; })
+            .attr("transform", _translate)
+            .attr("clip-path", "url(#hexPath)")
+            .append("path")
             .attr("d", _hexString)
             .attr("stroke", "black")
             .attr("fill", "none")
             .attr("stroke-width", 3)
-            .attr("pointer-events", "visible");
+            .attr("pointer-events", "visible")
+            .merge(dataSelect);
+
+        // If data is missing, remove the associated element
+        dataSelect.exit().remove();
+
+        // Take all the groups are currently in the HexMap and decorate them...
+        var groups = _svg.selectAll("g");
 
         // Render hexagon background
         groups.append("g")
@@ -297,6 +313,7 @@ HexMap = function(svgSelector) {
             .attr("pointer-events", "visible")
             .attr("fill", "none")
             .on("click", function(d, i) { d.click.apply(d); });
+           
     }
 
     _svg = d3.select(svgSelector);

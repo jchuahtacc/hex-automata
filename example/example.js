@@ -8,25 +8,32 @@ class ConwayHex extends Hex {
         this.alive = !this.alive;
     }
 
+    renderHex(radius) {
+        var g = d3.select(document.createElement("g"));
+        g.append("rect")
+            .attr("width", radius * 2)
+            .attr("height", radius * Math.sqrt(3))
+            .attr("fill", this.alive ? "steelblue" : "none");
+        return g.html();
+    }
 }
 
 var map = null;
 
 document.addEventListener("DOMContentLoaded", function(event) {
-/*
+
     map = new HexMap("#hexmap");
     d3.select("#hexmap").attr("width", 600).attr("height", 600);
     map.buildRect(2, 2);
+    map.redrawCell(1, 1);
+/*
+    var nums = [ 2, 3, 4, 5 ];
 
-    var cell = new Hex(4, 4);
-    map.set(4, 4, cell);
-    map.drawCell(4, 4);
+    function update(nums) {
+        var select = d3.select("body").selectAll("div").data(nums);
+        select.enter().append("div").append("p").html(function(d) { console.log(d); return d; }).merge(select);
+        d3.select("body").selectAll("div").append("p").html(function(d) { return "p2 " + d; });        
+    }
+    update(nums);
     */
-    var nums = [ 0, 1, 2, 3, 4];
-    var nums2 = [5, 6, 7];
-    var s1 = d3.select("body").selectAll("p").data(nums).enter().append("p").html(function(d) { return d; });
-    var s2 = d3.select("body").selectAll("p").data(nums2).enter().append("p").html(function(d) { return d; });
-    console.log("s1", s1);
-    console.log("s2", s2);
-    s1.append(s2);
 });
