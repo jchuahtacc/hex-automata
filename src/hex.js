@@ -61,6 +61,13 @@ class Hex {
             .attr("fill", "steelblue");
         return g.html();
     }
+    
+    // Asks the map containing this hex to redraw it
+    redraw() {
+        if (this.map) {
+            this.map.draw();
+        }
+    }
 }
 
 HexMap = function(svgSelector) {
@@ -119,21 +126,21 @@ HexMap = function(svgSelector) {
     }
 
     // radius property, radius or edge length of hexagon
-    Object.defineProperty(HexMap, 'radius', {
+    Object.defineProperty(HexMap.prototype, 'radius', {
         get : function() { return _radius; },
-        set : function(val) { _radius = val; _recompute(); draw(); }
+        set : function(val) { _radius = val; _recompute(); this.draw(); }
     });
 
     // edge property, interior width of hexagon for click detection or edge rendering
-    Object.defineProperty(HexMap, 'edge', {
+    Object.defineProperty(HexMap.prototype, 'edge', {
         get : function() { return _edge; },
-        set : function(val) { _edge = val; _recompute(); draw(); }
+        set : function(val) { _edge = val; _recompute(); this.draw(); }
     });
 
     // hex property, prototype of hexes for building new hex maps
-    Object.defineProperty(HexMap, 'hex', {
+    Object.defineProperty(HexMap.prototype, 'hex', {
         get : function() { return _hex; },
-        set : function(val) { _hex = val; _recompute(); draw(); }
+        set : function(val) { _hex = val; _recompute(); this.draw(); }
     });
 
     // Returns an array of neighboring cells
@@ -166,6 +173,7 @@ HexMap = function(svgSelector) {
                 var key = j + "," + i;
                 if (!(key in _map)) {
                     _map[key] = new _hex(j, i);
+                    _map[key].map = this;
                 }
             }
         }
@@ -175,6 +183,7 @@ HexMap = function(svgSelector) {
                 var key = j + "," + y;
                 if (!(key in _map)) {
                     _map[key] = new _hex(j, y);
+                    _map[key].map = this;
                 }
             }
             y = y + 1;
@@ -198,6 +207,7 @@ HexMap = function(svgSelector) {
         if (hex) {
             hex.x = x;
             hex.y = y;
+            hex.map = this;
             _map[key] = hex;
         } else {
             console.log("deleted!");
@@ -223,25 +233,9 @@ HexMap = function(svgSelector) {
         return _offsetDict[dx + ","+ dy];
     }
 
-    HexMap.prototype.draw = function() {
-      this._drawHexes(this.toArray());
-    }
-
-    HexMap.prototype.redrawCell = function(x, y) {
-        var hex = this.get(x, y);
-        if (hex) {
-            var selector = "g[x='" + x + "'][y='" + y + "']";
-            var g = _svg.select(selector);
-            g.remove();
-            this.draw();
-        }
-    }
-
     // Re-renders the SVG of the hex map
-    HexMap.prototype._drawHexes = function(hexes) {
+    HexMap.prototype.draw = function() {
          //Clear previous svg elements
-
-         console.log(hexes);
         _svg.select("defs").remove();
         _svg.append("defs")
             .append("clipPath")
@@ -251,14 +245,14 @@ HexMap = function(svgSelector) {
 
         // Create data binding 
         var dataSelect = _svg.selectAll("g")
-            .data(hexes, function(d) { return d; });
+            .data(this.toArray(), function(d) { return d; });
 
         // On new data element, create a group representing the hex
         // and merge it
         dataSelect
             .enter()
             .append("g")
-            .attr("x", function(d) { console.log("Adding group for ", d); return d.x; })
+            .attr("x", function(d) { return d.x; })
             .attr("y", function(d) { return d.y; })
             .attr("transform", _translate)
             .attr("clip-path", "url(#hexPath)")
