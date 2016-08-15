@@ -229,6 +229,18 @@ HexMap = function(svgSelector) {
        this._drawHexes(this.toArray());
     }
 
+    HexMap.prototype.drawCell = function(x, y) {
+        var hex = this.get(x, y);
+        if (hex) {
+            var selector = "g[x='" + x + "'][y='" + y + "']";
+            var g = _svg.select(selector);
+            g.remove();
+            hexes = [ ];
+            hexes.push(hex);
+            this._drawHexes(hexes);
+        }
+    }
+
     // Re-renders the SVG of the hex map
     HexMap.prototype._drawHexes = function(hexes) {
         // Create Hex group
@@ -240,7 +252,6 @@ HexMap = function(svgSelector) {
             .attr("y", function(d) { return d.y; });
         groups.attr("transform", _translate);
         groups.attr("clip-path", "url(#hexPath)");
-
         // Create border
         groups.append("path")
             .attr("d", _hexString)
