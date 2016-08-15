@@ -6,6 +6,8 @@ class ConwayHex extends Hex {
     
     click() {
         this.alive = !this.alive;
+        console.log("toggle", this);
+        this.redraw();
     }
 
     renderHex(radius) {
@@ -21,19 +23,8 @@ class ConwayHex extends Hex {
 var map = null;
 
 document.addEventListener("DOMContentLoaded", function(event) {
-
     map = new HexMap("#hexmap");
+    map.hex = ConwayHex;
     d3.select("#hexmap").attr("width", 600).attr("height", 600);
-    map.buildRect(2, 2);
-    map.redrawCell(1, 1);
-/*
-    var nums = [ 2, 3, 4, 5 ];
-
-    function update(nums) {
-        var select = d3.select("body").selectAll("div").data(nums);
-        select.enter().append("div").append("p").html(function(d) { console.log(d); return d; }).merge(select);
-        d3.select("body").selectAll("div").append("p").html(function(d) { return "p2 " + d; });        
-    }
-    update(nums);
-    */
+    map.buildRect(5, 5);
 });
