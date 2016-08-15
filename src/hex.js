@@ -217,7 +217,6 @@ HexMap = function(svgSelector) {
         return _offsetDict[dx + ","+ dy];
     }
 
-    // Re-renders the SVG of the hex map
     HexMap.prototype.draw = function() {
         //Clear previous svg elements
         _svg.select("defs").remove();
@@ -227,10 +226,14 @@ HexMap = function(svgSelector) {
             .attr("id", "hexPath")
             .append("path")
             .attr("d", _hexString);
+       this._drawHexes(this.toArray());
+    }
 
+    // Re-renders the SVG of the hex map
+    HexMap.prototype._drawHexes = function(hexes) {
         // Create Hex group
         var groups = _svg.selectAll("g")
-            .data(this.toArray())
+            .data(hexes)
             .enter()
             .append("g")
             .attr("x", function(d) { return d.x; })
