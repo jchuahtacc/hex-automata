@@ -9,6 +9,10 @@
 // of the previous value of x.
 class Hex {
     constructor(json) {
+        if (json) {
+            this.x = json.x;
+            this.y = json.y;
+        }
     }
 
     // Callback when the interior of a hexagon is clicked
@@ -65,6 +69,17 @@ class Hex {
         if (this.map) {
             this.map.draw();
         }
+    }
+
+    // Returns object information for serialization or re-initialization
+    // Included information is the x, y coordinate and a string
+    // representing the class name
+    dump() {
+        return { x : this.x, y : this.y, type : this.constructor.name };
+    }
+
+    next(neighbors) {
+        return this;
     }
 }
 
@@ -261,13 +276,12 @@ HexMap = function(svgSelector) {
 
     // Exports the current hexmap data as a JSON, serializing any data in each Hex
     HexMap.prototype.toJson = function() {
-        var result = JSON.parse(JSON.stringify(_map));
-        for (var cell in result) {
-            delete result[cell].map;
-            result[cell].type = _map[cell].constructor.name;
+        var result = { };
+        for (var key in _map) {
+            result[key] = _map[key].dump();
         }
         return result;
-    }
+   }
 
     // Re-renders the SVG of the hex map
     HexMap.prototype.draw = function() {
@@ -344,6 +358,15 @@ HexMap = function(svgSelector) {
             .attr("fill", "none")
             .on("click", function(d, i) { d.click.apply(d); });
            
+    }
+
+    HexMap.prototype.run = function() {
+        var nextMap = { };
+        for (var key in _map) {
+            current = _map[key];
+            nextMap[key] = current.next(this.neighbors(current.x, current.y));
+        }
+        _cleanJson(nextMap);
     }
 
     _svg = d3.select(svgSelector);

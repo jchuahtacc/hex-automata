@@ -1,6 +1,7 @@
 class ConwayHex extends Hex {
     constructor(json) {
-        super();
+        super(json);
+        this.alive = false;
         if (json) {
             this.alive = json.alive;
         }
@@ -10,6 +11,12 @@ class ConwayHex extends Hex {
         this.alive = !this.alive;
         console.log("toggle", this);
         this.redraw();
+    }
+
+    dump() {
+        var result = super.dump();
+        result.alive = this.alive;
+        return result;
     }
 
     renderHex(radius) {
