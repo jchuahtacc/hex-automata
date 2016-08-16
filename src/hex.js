@@ -8,6 +8,8 @@
 // visually are below the previous value of y, and increasing values of x are above and to the right
 // of the previous value of x.
 class Hex {
+    // A constructor which initializes itself using json data
+    // given by a call to "dump"
     constructor(json) {
         if (json) {
             this.x = json.x;
@@ -78,8 +80,13 @@ class Hex {
         return { x : this.x, y : this.y, type : this.constructor.name };
     }
 
+    // A callback to produce a new instance of a cell that will occupy
+    // the x, y coordinate of the current cell in the next state of the
+    // automaton.
+    // 
+    // The base class implementation simply returns a copy of the current cell.
     next(neighbors) {
-        return this;
+        return new this.constructor(this);
     }
 }
 
@@ -360,13 +367,18 @@ HexMap = function(svgSelector) {
            
     }
 
+    // Creates the "next state" of the automaton by calling each
+    // cell's "next" function (passing its current neighbors to the cell)
+    // and storing the dump of the next cell in a json object.
+    // The json object returned would be the equivalent of creating
+    // the next state and calling the toJson() function.
     HexMap.prototype.run = function() {
         var nextMap = { };
         for (var key in _map) {
             current = _map[key];
-            nextMap[key] = current.next(this.neighbors(current.x, current.y));
+            nextMap[key] = current.next(this.neighbors(current.x, current.y)).dump();
         }
-        _cleanJson(nextMap);
+        return nextMap;
     }
 
     _svg = d3.select(svgSelector);
