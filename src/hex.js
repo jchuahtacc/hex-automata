@@ -8,9 +8,7 @@
 // visually are below the previous value of y, and increasing values of x are above and to the right
 // of the previous value of x.
 class Hex {
-    constructor(x, y) {
-        this.x = x;
-        this.y = y;
+    constructor() {
     }
 
     // Callback when the interior of a hexagon is clicked
@@ -170,21 +168,13 @@ HexMap = function(svgSelector) {
     HexMap.prototype.buildRect = function(width, height) {
         for (var i = 0; i < height; i++) {
             for (var j = 0; j < (i + 1) * 2 - 1 && j < width; j++) {
-                var key = j + "," + i;
-                if (!(key in _map)) {
-                    _map[key] = new _hex(j, i);
-                    _map[key].map = this;
-                }
+                this.set(j, i, new _hex());
             }
         }
         var y = height;
         for (var i = 1; i < width; i = i + 2) {
             for (var j = i; j < width; j++) {
-                var key = j + "," + y;
-                if (!(key in _map)) {
-                    _map[key] = new _hex(j, y);
-                    _map[key].map = this;
-                }
+                this.set(j, y, new _hex());
             }
             y = y + 1;
         }
@@ -231,6 +221,15 @@ HexMap = function(svgSelector) {
     // For example, if dx is 1 and dy is 0, 30 degrees is returned
     HexMap.prototype.offsetToDegrees = function(dx, dy) {
         return _offsetDict[dx + ","+ dy];
+    }
+
+    HexMap.prototype.toJson = function() {
+        var result = JSON.parse(JSON.stringify(_map));
+        for (var cell in result) {
+            delete result[cell].map;
+            result[cell].type = _map[cell].constructor.name;
+        }
+        return result;
     }
 
     // Re-renders the SVG of the hex map

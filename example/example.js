@@ -1,6 +1,6 @@
 class ConwayHex extends Hex {
-    constructor(x, y) {
-        super(x, y);
+    constructor() {
+        super();
         this.alive = false;
     }
     
@@ -28,5 +28,6 @@ document.addEventListener("DOMContentLoaded", function(event) {
     map.edge = 5;
     map.hex = ConwayHex;
     d3.select("#hexmap").attr("width", 1900).attr("height", 1050);
-    map.buildRect(41, 19);
+    map.buildRect(4, 4);
+    console.log(JSON.stringify(map.toJson()));
 });
