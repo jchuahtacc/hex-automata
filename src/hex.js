@@ -8,7 +8,7 @@
 // visually are below the previous value of y, and increasing values of x are above and to the right
 // of the previous value of x.
 class Hex {
-    constructor() {
+    constructor(json) {
     }
 
     // Callback when the interior of a hexagon is clicked
@@ -164,7 +164,7 @@ HexMap = function(svgSelector) {
         return hexes;
     }
 
-    // Initializes a rectangular configuration for the hex map, using the specified hex prototype
+   // Initializes a rectangular configuration for the hex map, using the specified hex prototype
     HexMap.prototype.buildRect = function(width, height) {
         for (var i = 0; i < height; i++) {
             for (var j = 0; j < (i + 1) * 2 - 1 && j < width; j++) {
@@ -223,6 +223,43 @@ HexMap = function(svgSelector) {
         return _offsetDict[dx + ","+ dy];
     }
 
+    // Loads a HexMap from a JSON and a dictionary. The second
+    // parameter, dictionary, must be a JSON object where each
+    // key is a string name associated with a value that is the
+    // constructor for that string name.
+    //
+    // Example json:
+    // {
+    //   cell1: {
+    //      x : 3,
+    //      y : 4,
+    //      type : "ConwayHex"
+    //   }
+    // }
+    //
+    // Example dictionary:
+    // {
+    //   "ConwayHex" : ConwayHex
+    // }
+    HexMap.prototype.fromJson = function(json, dictionary) {
+        if (!dictionary) {
+            dictionary = { };
+        }
+        if (!("Hex" in dictionary)) {
+            dictionary["Hex"] = Hex;
+        }
+        for (var cell in json) {
+            var hexClass = dictionary[json[cell].type];
+            if (hexClass == undefined) {
+                throw new Error(json[cell].type + " does not appear in constructor dictionary");
+            }
+            console.log(json[cell]);
+            this.set(json[cell].x, json[cell].y, new hexClass(json[cell]));
+        }
+        this.draw();
+    }
+
+    // Exports the current hexmap data as a JSON, serializing any data in each Hex
     HexMap.prototype.toJson = function() {
         var result = JSON.parse(JSON.stringify(_map));
         for (var cell in result) {

@@ -1,7 +1,9 @@
 class ConwayHex extends Hex {
-    constructor() {
+    constructor(json) {
         super();
-        this.alive = false;
+        if (json) {
+            this.alive = json.alive;
+        }
     }
     
     click() {
@@ -22,12 +24,20 @@ class ConwayHex extends Hex {
 
 var map = null;
 
+function dump() {
+    d3.select("#json").html(JSON.stringify(map.toJson()));
+}
+
+function load() {
+    var dump = document.getElementById("json").value.trim().replace(/\s/g, ""); 
+    this.map.fromJson(JSON.parse(dump), { "ConwayHex" : ConwayHex }); 
+}
+
 document.addEventListener("DOMContentLoaded", function(event) {
     map = new HexMap("#hexmap");
-    map.radius = 30;
+    map.radius = 40;
     map.edge = 5;
     map.hex = ConwayHex;
-    d3.select("#hexmap").attr("width", 1900).attr("height", 1050);
-    map.buildRect(4, 4);
-    console.log(JSON.stringify(map.toJson()));
+    d3.select("#hexmap").attr("width", 600).attr("height", 300);
+    map.buildRect(3, 3);
 });
