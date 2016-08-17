@@ -32,6 +32,9 @@ class Hex {
     // A callback that returns the HTML of svg elements representing a hex edge.
     // dx and dy are the offset representing the edge being rendered.
     // For example, if dx and dy are both 1, the lower right edge is being rendered
+    // where the origin of the elements returned by this function would coincide with
+    // the rightmost vertex of the hexagon, and ascending y values would be closer to
+    // the center of the hexagon.
     // width represents the width of a hex edge
     // height represents the height of a hex edge
     renderEdge(dx, dy, width, height) {
@@ -335,7 +338,7 @@ HexMap = function(svgSelector) {
         // Render Hex edges
         for (var i in _offsets) {
             groups.append("g")
-                .attr("transform", "rotate(" + Math.floor(-1 * (90 + this.offsetToDegrees(_offsets[i].dx, _offsets[i].dy))) + ") translate(" + -_radius / 2 + " " + -_dColY + ") translate(0 " + -_edge + ")")
+                .attr("transform", "rotate(" + Math.floor(-1 * (-90 + this.offsetToDegrees(_offsets[i].dx, _offsets[i].dy))) + ") translate(" + Math.floor(-_radius / 2)  + " " + _dColY + ") ")
                 .attr("dx", _offsets[i].dx)
                 .attr("dy", _offsets[i].dy)
                 .html(function(d) { return d.renderEdge(parseInt(this.getAttribute("dx")), parseInt(this.getAttribute("dy")), _radius, _edge); });
