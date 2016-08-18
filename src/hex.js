@@ -266,6 +266,7 @@ HexMap = function(svgSelector, props) {
     //   "ConwayHex" : ConwayHex
     // }
     HexMap.prototype.fromJson = function(json) {
+        _svg.selectAll("g").remove();
         for (var cell in json) {
             var hexClass = this.constructors[json[cell].type];
             if (hexClass == undefined) {

@@ -31,6 +31,11 @@ class ConwayHex extends Hex {
         return result;
     }
 
+    // Callback that should return a new cell representing
+    // the state of this cell in the next generation
+    // 
+    // In this example, use Conway-esque rules based on
+    // overcrowding or loneliness
     next(neighbors) {
         var neighborCount = 0;
         for (var i in neighbors) {
@@ -85,13 +90,9 @@ class ConwayHex extends Hex {
 
 var map = null;
 
-// dump button onClick event
-function dump() {
-    d3.select("#json").html(JSON.stringify(map.toJson()));
-}
-
 function next() {
     map.fromJson(map.next());
+    d3.select("#json").html(JSON.stringify(map.toJson(), null, "\t"));
 }
 
 // load button onClick event
@@ -104,9 +105,13 @@ function load() {
 
 // When document finishes loading, initialize the Hex Map
 document.addEventListener("DOMContentLoaded", function(event) {
-    map = new HexMap("#hexmap", { radius : radius, edge: edge, constructors : { "ConwayHex" : ConwayHex } });
+    var properties = { 
+        radius : radius,
+        edge : edge,
+        constructors : { "ConwayHex" : ConwayHex }
+    };
+    map = new HexMap("#hexmap", properties); 
     map.hex = ConwayHex;
-    d3.select("#hexmap").attr("width", 600).attr("height", 300);
-    map.buildRect(3, 3);
+    map.buildRect(15, 10);
     map.draw();
 });
