@@ -26,7 +26,6 @@ class Hex {
     // dx and dy represent the offset of the hex bordering
     // the edge that was clicked
     edgeClick(dx, dy) {
-        console.log("edge click " + dx +"," + dy, this);
     }
 
     // A callback that returns the HTML of svg elements representing a hex edge.
@@ -35,38 +34,16 @@ class Hex {
     // where the origin of the elements returned by this function would coincide with
     // the rightmost vertex of the hexagon, and ascending y values would be closer to
     // the center of the hexagon.
-    // width represents the width of a hex edge
-    // height represents the height of a hex edge
-    renderEdge(dx, dy, width, height) {
-        var g = d3.select(document.createElement("g"));
-        var pair = dx + "," + dy;
-        var fill = "";
-        switch(pair) {
-            case "1,0" : fill = "red"; break;
-            case "0,-1" : fill = "orange"; break;
-            case "-1,-1" : fill = "yellow"; break;
-            case "-1,0" : fill = "green"; break;
-            case "0,1" : fill = "blue"; break;
-            case "1,1" : fill = "purple"; break;
-        }
-        g.append("rect")
-            .attr("width", width)
-            .attr("height", height)
-            .attr("fill", fill);
-        return g.html();
+    renderEdge(dx, dy) {
     }
 
-    // A callback that returns the HTML of svg elements representing the hexagon body
-    // The HTML of the region returned will be rendered as a rectangle, with a
-    // width = radius * 2 and height = radius * Math.sqrt(3)
-    // The resulting group will be rendered and clipped to the surrounding hexagon
-    renderHex(radius) {
-        var g = d3.select(document.createElement("g"));
-        g.append("rect")
-            .attr("width", radius * 2)
-            .attr("height", radius * Math.sqrt(3))
-            .attr("fill", "steelblue");
-        return g.html();
+    // A callback that returns the HTML of svg elements representing this
+    // hexagon's body.
+    //
+    // width and height are supplied, representing a rectangle that would contain
+    // this hexagon, with the origin of the rendered region lying beyond the hexagon
+    // to the upper left. The rendered region will be clipped to the hexagon.
+    renderHex(width, height) {
     }
     
     // Asks the map containing this hex to redraw it
@@ -136,7 +113,7 @@ HexMap = function(svgSelector, options) {
 
     // Build outside hex path
     function _buildHexString() {
-        var height = _radius / 2 * Math.sqrt(3);
+        var height = _offsetY; 
         var halfRad = _radius / 2;
         return "M " + -halfRad + " " + -height + " L " + halfRad + " " + -height + " L " + _radius + " 0 " + " L " + halfRad + " " + height + " L " + -halfRad + " " + height + " L " + -_radius + " 0 Z"; 
     }
@@ -338,8 +315,8 @@ HexMap = function(svgSelector, options) {
         if (this.renderHexes) {
             groups.append("g")
                 .attr("hex-role", "render-hex")
-                .attr("transform", "translate(" + -_radius + " " + Math.floor(-_radius / 2 * Math.sqrt(3)) + " ) ")
-                .html(function(d) { return d.renderHex(_radius); });
+                .attr("transform", "translate(" + -_radius + " " + Math.floor(_dColY) + " ) ")
+                .html(function(d) { return d.renderHex(_radius * 2, _dRow ); });
         }
         // Render Hex edges
         if (this.renderEdges) {
@@ -351,7 +328,7 @@ HexMap = function(svgSelector, options) {
                     .attr("dx", _offsets[i].dx)
                     .attr("dy", _offsets[i].dy)
                     .attr("hex-role", "render-edge")
-                    .html(function(d) { return d.renderEdge(parseInt(this.getAttribute("dx")), parseInt(this.getAttribute("dy")), _radius, _edge); });
+                    .html(function(d) { return d.renderEdge(parseInt(this.getAttribute("dx")), parseInt(this.getAttribute("dy"))); });
             }
         }
 

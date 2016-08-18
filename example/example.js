@@ -1,5 +1,7 @@
 const crowded = 4;
 const lonely = 1;
+const radius = 40;
+const edge = 5;
 
 class ConwayHex extends Hex {
     // A constructor that loads from json and sets any member variables
@@ -15,6 +17,10 @@ class ConwayHex extends Hex {
     click() {
         this.alive = !this.alive;
         this.draw();
+    }
+
+    edgeClick(dx, dy) {
+        console.log("Edge click, with offset " + dx, "," + dy, this);
     }
 
     // Serialization to JSON. Dump everything from the parent class
@@ -45,14 +51,36 @@ class ConwayHex extends Hex {
     // Create a large rectangular background. The background is
     // transparent if the cell isn't "alive", and filled with
     // steel blue if the cell is "alive"
-    renderHex(radius) {
+    renderHex(width, height) {
         var g = d3.select(document.createElement("g"));
         g.append("rect")
-            .attr("width", radius * 2)
-            .attr("height", radius * Math.sqrt(3))
+            .attr("width", width)
+            .attr("height", height)
             .attr("fill", this.alive ? "steelblue" : "none");
         return g.html();
     }
+
+    // Render a rainbow border around the Hexagon
+    renderEdge(dx, dy) {
+        var g = d3.select(document.createElement("g"));
+        var pair = dx + "," + dy;
+        var fill = "";
+        switch(pair) {
+            case "1,0" : fill = "red"; break;
+            case "0,-1" : fill = "orange"; break;
+            case "-1,-1" : fill = "yellow"; break;
+            case "-1,0" : fill = "green"; break;
+            case "0,1" : fill = "blue"; break;
+            case "1,1" : fill = "purple"; break;
+        }
+        g.append("rect")
+            .attr("width", radius)
+            .attr("height", edge)
+            .attr("fill", fill);
+        return g.html();
+    }
+
+ 
 }
 
 var map = null;
@@ -76,7 +104,7 @@ function load() {
 
 // When document finishes loading, initialize the Hex Map
 document.addEventListener("DOMContentLoaded", function(event) {
-    map = new HexMap("#hexmap", { radius : 40, edge: 5, constructors : { "ConwayHex" : ConwayHex } });
+    map = new HexMap("#hexmap", { radius : radius, edge: edge, constructors : { "ConwayHex" : ConwayHex } });
     map.hex = ConwayHex;
     d3.select("#hexmap").attr("width", 600).attr("height", 300);
     map.buildRect(3, 3);
