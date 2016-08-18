@@ -1,4 +1,5 @@
 class ConwayHex extends Hex {
+    // A constructor that loads from json and sets any member variables
     constructor(json) {
         super(json);
         this.alive = false;
@@ -7,18 +8,23 @@ class ConwayHex extends Hex {
         }
     }
     
+    // Click listener. Toggles the "alive" state and requests a redraw    
     click() {
         this.alive = !this.alive;
-        console.log("toggle", this);
         this.redraw();
     }
 
+    // Serialization to JSON. Dump everything from the parent class
+    // and add the "alive" member variable
     dump() {
         var result = super.dump();
         result.alive = this.alive;
         return result;
     }
 
+    // Create a large rectangular background. The background is
+    // transparent if the cell isn't "alive", and filled with
+    // steel blue if the cell is "alive"
     renderHex(radius) {
         var g = d3.select(document.createElement("g"));
         g.append("rect")
@@ -31,15 +37,21 @@ class ConwayHex extends Hex {
 
 var map = null;
 
+// dump button onClick event
 function dump() {
     d3.select("#json").html(JSON.stringify(map.toJson()));
 }
 
+// load button onClick event
 function load() {
+    // Get the textaera contents, strip all whitespace
     var dump = document.getElementById("json").value.trim().replace(/\s/g, ""); 
+    // Parse the text area contents as a Json, provide the Json along with 
+    // a constructor dictionary to the fromJson function
     this.map.fromJson(JSON.parse(dump), { "ConwayHex" : ConwayHex }); 
 }
 
+// When document finishes loading, initialize the Hex Map
 document.addEventListener("DOMContentLoaded", function(event) {
     map = new HexMap("#hexmap");
     map.radius = 40;
