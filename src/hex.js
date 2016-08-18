@@ -92,7 +92,7 @@ HexMap = function(svgSelector, props) {
     this.hexClicks = true;
     this.renderEdges = false;
     this.renderHexes = true;
-    this.drawGrid = true;
+    this.drawGrid = false;
 
    // radius property, radius or edge length of hexagon
     Object.defineProperty(HexMap.prototype, 'radius', {
@@ -109,7 +109,7 @@ HexMap = function(svgSelector, props) {
     // hex property, prototype of hexes for building new hex maps
     Object.defineProperty(HexMap.prototype, 'hex', {
         get : function() { return _hex; },
-        set : function(val) { _hex = val; _recompute(); if (this.autodraw) this.draw(); }
+        set : function(val) { _hex = val; }
     });
 
  
@@ -247,25 +247,10 @@ HexMap = function(svgSelector, props) {
         return _offsetDict[dx + ","+ dy];
     }
 
-    // Loads a HexMap from a JSON and a dictionary. The second
-    // parameter, dictionary, must be a JSON object where each
-    // key is a string name associated with a value that is the
-    // constructor for that string name.
-    //
-    // Example json:
-    // {
-    //   cell1: {
-    //      x : 3,
-    //      y : 4,
-    //      type : "ConwayHex"
-    //   }
-    // }
-    //
-    // Example dictionary:
-    // {
-    //   "ConwayHex" : ConwayHex
-    // }
+    // Loads a HexMap from a JSON and a dictionary. 
     HexMap.prototype.fromJson = function(json) {
+        var saveDraw = this.autodraw;
+        this.autodraw = false;
         _svg.selectAll("g").remove();
         for (var cell in json) {
             var hexClass = this.constructors[json[cell].type];
@@ -274,6 +259,7 @@ HexMap = function(svgSelector, props) {
             }
             this.set(json[cell].x, json[cell].y, new hexClass(json[cell]));
         }
+        this.autodraw = true;
         if (this.autodraw) this.draw();
     }
 
