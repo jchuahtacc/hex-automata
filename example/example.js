@@ -1,7 +1,5 @@
 const crowded = 4;
 const lonely = 1;
-const radius = 40;
-const edge = 5;
 
 class ConwayHex extends Hex {
     // A constructor that loads from json and sets any member variables
@@ -105,6 +103,11 @@ function load() {
 
 // When document finishes loading, initialize the Hex Map
 document.addEventListener("DOMContentLoaded", function(event) {
+    const columns = 15;
+    const rows = 10;
+    const radius = Math.min(document.body.clientWidth * 0.6 / columns / 2, document.body.clientHeight * 1.0 / rows / 2);
+    const edge = 5;
+
     var properties = { 
         radius : radius,
         edge : edge,
@@ -112,6 +115,6 @@ document.addEventListener("DOMContentLoaded", function(event) {
     };
     map = new HexMap("#hexmap", properties); 
     map.hex = ConwayHex;
-    map.buildRect(15, 10);
+    map.buildRect(columns, rows);
     map.draw();
 });
