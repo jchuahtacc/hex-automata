@@ -70,7 +70,7 @@ class Hex {
     }
     
     // Asks the map containing this hex to redraw it
-    redraw() {
+    draw() {
         if (this.map) {
             this.map.draw();
         }
@@ -93,7 +93,7 @@ class Hex {
     }
 }
 
-HexMap = function(svgSelector) {
+HexMap = function(svgSelector, options) {
     var _radius = 60;
     var _dRow = 120;
     var _dColX = 180;
@@ -106,6 +106,33 @@ HexMap = function(svgSelector) {
     var _innerHex = "";
     var _svg = null;
     var _hex = Hex;
+
+    this.constructors = { "Hex" : Hex },
+    this.autodraw = true;
+    this.edgeClick = true;
+    this.hexClick = true;
+    this.renderEdges = true;
+    this.renderHexes = true;
+
+   // radius property, radius or edge length of hexagon
+    Object.defineProperty(HexMap.prototype, 'radius', {
+        get : function() { return _radius; },
+        set : function(val) { _radius = val; _recompute(); if (this.autodraw) this.draw(); }
+    });
+
+    // edge property, interior width of hexagon for click detection or edge rendering
+    Object.defineProperty(HexMap.prototype, 'edge', {
+        get : function() { return _edge; },
+        set : function(val) { _edge = val; _recompute(); if (this.autodraw) this.draw(); }
+    });
+
+    // hex property, prototype of hexes for building new hex maps
+    Object.defineProperty(HexMap.prototype, 'hex', {
+        get : function() { return _hex; },
+        set : function(val) { _hex = val; _recompute(); if (this.autodraw) this.draw(); }
+    });
+
+ 
 
     // Build outside hex path
     function _buildHexString() {
@@ -148,25 +175,7 @@ HexMap = function(svgSelector) {
         _innerHex = _makeInnerHex();
     }
 
-    // radius property, radius or edge length of hexagon
-    Object.defineProperty(HexMap.prototype, 'radius', {
-        get : function() { return _radius; },
-        set : function(val) { _radius = val; _recompute(); this.draw(); }
-    });
-
-    // edge property, interior width of hexagon for click detection or edge rendering
-    Object.defineProperty(HexMap.prototype, 'edge', {
-        get : function() { return _edge; },
-        set : function(val) { _edge = val; _recompute(); this.draw(); }
-    });
-
-    // hex property, prototype of hexes for building new hex maps
-    Object.defineProperty(HexMap.prototype, 'hex', {
-        get : function() { return _hex; },
-        set : function(val) { _hex = val; _recompute(); this.draw(); }
-    });
-
-    // Returns an array of neighboring cells
+   // Returns an array of neighboring cells
     // Each array element is an object with fields "dx" and "dy" representing
     // the offset of the neighbor and field "hex" containing the neighbor
     HexMap.prototype.neighbors = function(x, y) {
@@ -203,7 +212,7 @@ HexMap = function(svgSelector) {
             }
             y = y + 1;
         }
-        this.draw();
+        if (this.autodraw) this.draw();
     }
     
     // Returns a hex in the map, or undefined if an invalid coordinate was specified
@@ -228,7 +237,7 @@ HexMap = function(svgSelector) {
             console.log("deleted!");
             delete _map[key];
         }
-        this.draw();
+        if (this.autodraw) this.draw();
     }
 
     var _offsetDict = { 
@@ -266,22 +275,15 @@ HexMap = function(svgSelector) {
     // {
     //   "ConwayHex" : ConwayHex
     // }
-    HexMap.prototype.fromJson = function(json, dictionary) {
-        if (!dictionary) {
-            dictionary = { };
-        }
-        if (!("Hex" in dictionary)) {
-            dictionary["Hex"] = Hex;
-        }
+    HexMap.prototype.fromJson = function(json) {
         for (var cell in json) {
-            var hexClass = dictionary[json[cell].type];
+            var hexClass = this.constructors[json[cell].type];
             if (hexClass == undefined) {
-                throw new Error(json[cell].type + " does not appear in constructor dictionary");
+                throw new Error(json[cell].type + " does not appear in constructors dictionary: ", this.constructors);
             }
-            console.log(json[cell]);
             this.set(json[cell].x, json[cell].y, new hexClass(json[cell]));
         }
-        this.draw();
+        if (this.autodraw) this.draw();
     }
 
     // Exports the current hexmap data as a JSON, serializing any data in each Hex
@@ -316,6 +318,14 @@ HexMap = function(svgSelector) {
             .attr("y", function(d) { return d.y; })
             .attr("transform", _translate)
             .attr("clip-path", "url(#hexPath)")
+        // If data is missing, remove the associated element
+        dataSelect.exit().remove();
+
+        // Take all the groups are currently in the HexMap and decorate them...
+        var groups = _svg.selectAll("g");
+
+        groups.append("g")
+            .attr("hex-role", "border")
             .append("path")
             .attr("d", _hexString)
             .attr("stroke", "black")
@@ -324,50 +334,59 @@ HexMap = function(svgSelector) {
             .attr("pointer-events", "visible")
             .merge(dataSelect);
 
-        // If data is missing, remove the associated element
-        dataSelect.exit().remove();
-
-        // Take all the groups are currently in the HexMap and decorate them...
-        var groups = _svg.selectAll("g");
-
         // Render hexagon background
-        groups.append("g")
-            .attr("transform", "translate(" + -_radius + " " + Math.floor(-_radius / 2 * Math.sqrt(3)) + " ) ")
-            .html(function(d) { return d.renderHex(_radius); });
-
-        // Render Hex edges
-        for (var i in _offsets) {
+        if (this.renderHexes) {
             groups.append("g")
-                .attr("transform", "rotate(" + Math.floor(-1 * (-90 + this.offsetToDegrees(_offsets[i].dx, _offsets[i].dy))) + ") translate(" + Math.floor(-_radius / 2)  + " " + _dColY + ") ")
-                .attr("dx", _offsets[i].dx)
-                .attr("dy", _offsets[i].dy)
-                .html(function(d) { return d.renderEdge(parseInt(this.getAttribute("dx")), parseInt(this.getAttribute("dy")), _radius, _edge); });
+                .attr("hex-role", "render-hex")
+                .attr("transform", "translate(" + -_radius + " " + Math.floor(-_radius / 2 * Math.sqrt(3)) + " ) ")
+                .html(function(d) { return d.renderHex(_radius); });
+        }
+        // Render Hex edges
+        if (this.renderEdges) {
+            var edgeGroup = groups.append("g");
+            edgeGroup.attr("hex-role", "edges")
+            for (var i in _offsets) {
+                edgeGroup.append("g")
+                    .attr("transform", "rotate(" + Math.floor(-1 * (-90 + this.offsetToDegrees(_offsets[i].dx, _offsets[i].dy))) + ") translate(" + Math.floor(-_radius / 2)  + " " + _dColY + ") ")
+                    .attr("dx", _offsets[i].dx)
+                    .attr("dy", _offsets[i].dy)
+                    .attr("hex-role", "render-edge")
+                    .html(function(d) { return d.renderEdge(parseInt(this.getAttribute("dx")), parseInt(this.getAttribute("dy")), _radius, _edge); });
+            }
         }
 
         // Render click listener group
-        var clickGroup = groups.append("g");
+        if (this.edgeClick || this.hexClick) {
+            var clickGroup = groups.append("g");
+            clickGroup.attr("hex-role", "click-zones");
+        }
 
         // Render edge click regions
-        for (var i in _offsets) {
-            clickGroup.append("path")
-                .attr("blah", "blah")
-                .attr("d", _trapezoid)
-                .attr("transform", "rotate(" + Math.floor(-1 * (90 + this.offsetToDegrees(_offsets[i].dx, _offsets[i].dy))) + ") translate(" + -_radius / 2 + " " + -_dColY + ") translate(0 " + -_edge + ")")
-                .attr("fill", "none")
-                .attr("dx", _offsets[i].dx)
-                .attr("dy", _offsets[i].dy)
-                .attr("pointer-events", "visible")
-                .on("click", function(d, i) { d.edgeClick( parseInt(this.getAttribute("dx")), parseInt(this.getAttribute("dy")) ); });
+        if (this.edgeClick) {
+            for (var i in _offsets) {
+                clickGroup.append("path")
+                    .attr("blah", "blah")
+                    .attr("d", _trapezoid)
+                    .attr("transform", "rotate(" + Math.floor(-1 * (90 + this.offsetToDegrees(_offsets[i].dx, _offsets[i].dy))) + ") translate(" + -_radius / 2 + " " + -_dColY + ") translate(0 " + -_edge + ")")
+                    .attr("fill", "none")
+                    .attr("dx", _offsets[i].dx)
+                    .attr("dy", _offsets[i].dy)
+                    .attr("pointer-events", "visible")
+                    .attr("hex-role", "edge-click-zone")
+                    .on("click", function(d, i) { d.edgeClick( parseInt(this.getAttribute("dx")), parseInt(this.getAttribute("dy")) ); });
+            }
         }
 
         // Render inside hex click region
-        clickGroup.append("path")
-            .attr("d", _innerHex)
-            .attr("stroke", "none")
-            .attr("pointer-events", "visible")
-            .attr("fill", "none")
-            .on("click", function(d, i) { d.click.apply(d); });
-           
+        if (this.hexClick) {
+            clickGroup.append("path")
+                .attr("d", _innerHex)
+                .attr("stroke", "none")
+                .attr("pointer-events", "visible")
+                .attr("fill", "none")
+                .attr("hex-role", "hex-click-zone")
+                .on("click", function(d, i) { d.click.apply(d); });
+        }   
     }
 
     // Creates the "next state" of the automaton by calling each
@@ -376,6 +395,8 @@ HexMap = function(svgSelector) {
     // The json object returned would be the equivalent of creating
     // the next state and calling the toJson() function.
     HexMap.prototype.next = function() {
+        var saveDraw = this.autodraw;
+        this.autodraw = false;
         var nextMap = { };
         for (var key in _map) {
             current = _map[key];
@@ -388,10 +409,27 @@ HexMap = function(svgSelector) {
             }
             nextMap[key] = newHex.dump();
         }
+        
+        this.autodraw = saveDraw;
         return nextMap;
     }
 
     _svg = d3.select(svgSelector);
+
+    // Grab user options
+    if (options) {
+        for (var key in options) {
+            // Union the constructors dictionary with the default constructors dictionary
+            if (key === "constructors") {
+                var userdict = options.constructors;
+                for (var dict in userdict) {
+                    this.constructors[dict] = userdict[dict];
+                }
+            } else {
+                this[key] = options[key];
+            }
+        }
+    }
     _recompute();
-    this.draw();
+    if (this.autodraw) this.draw();
 }

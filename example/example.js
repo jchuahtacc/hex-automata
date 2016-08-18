@@ -14,7 +14,7 @@ class ConwayHex extends Hex {
     // Click listener. Toggles the "alive" state and requests a redraw    
     click() {
         this.alive = !this.alive;
-        this.redraw();
+        this.draw();
     }
 
     // Serialization to JSON. Dump everything from the parent class
@@ -63,24 +63,22 @@ function dump() {
 }
 
 function next() {
-    map.fromJson(map.next(), { "ConwayHex" : ConwayHex });
+    map.fromJson(map.next());
 }
 
 // load button onClick event
 function load() {
     // Get the textaera contents, strip all whitespace
     var dump = document.getElementById("json").value.trim().replace(/\s/g, ""); 
-    // Parse the text area contents as a Json, provide the Json along with 
-    // a constructor dictionary to the fromJson function
-    this.map.fromJson(JSON.parse(dump), { "ConwayHex" : ConwayHex }); 
+    // Parse the text area contents as a Json
+    this.map.fromJson(JSON.parse(dump)); 
 }
 
 // When document finishes loading, initialize the Hex Map
 document.addEventListener("DOMContentLoaded", function(event) {
-    map = new HexMap("#hexmap");
-    map.radius = 40;
-    map.edge = 5;
+    map = new HexMap("#hexmap", { radius : 40, edge: 5, constructors : { "ConwayHex" : ConwayHex } });
     map.hex = ConwayHex;
     d3.select("#hexmap").attr("width", 600).attr("height", 300);
     map.buildRect(3, 3);
+    map.draw();
 });
