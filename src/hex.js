@@ -172,7 +172,7 @@ HexMap = function(svgSelector) {
     HexMap.prototype.neighbors = function(x, y) {
         var result = [];
         for (var i in _offsets) {
-            var hex = this.get(_offsets[i].dx, _offsets[i].dy);
+            var hex = this.get(x + _offsets[i].dx, y + _offsets[i].dy);
             if (hex) {
                 result.push({ dx : _offsets[i].dx, dy : _offsets[i].dy, hex : hex});
             }
@@ -375,11 +375,18 @@ HexMap = function(svgSelector) {
     // and storing the dump of the next cell in a json object.
     // The json object returned would be the equivalent of creating
     // the next state and calling the toJson() function.
-    HexMap.prototype.run = function() {
+    HexMap.prototype.next = function() {
         var nextMap = { };
         for (var key in _map) {
             current = _map[key];
-            nextMap[key] = current.next(this.neighbors(current.x, current.y)).dump();
+            var newHex = current.next(this.neighbors(current.x, current.y));
+            if (!newHex.x) {
+                newHex.x = current.x;
+            }
+            if (!newHex.y) {
+                newHex.y = current.y;
+            }
+            nextMap[key] = newHex.dump();
         }
         return nextMap;
     }

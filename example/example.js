@@ -1,3 +1,6 @@
+const crowded = 4;
+const lonely = 1;
+
 class ConwayHex extends Hex {
     // A constructor that loads from json and sets any member variables
     constructor(json) {
@@ -22,6 +25,23 @@ class ConwayHex extends Hex {
         return result;
     }
 
+    next(neighbors) {
+        var neighborCount = 0;
+        for (var i in neighbors) {
+            // Get hex field of a neighbor entry
+            var hex = neighbors[i].hex;
+            // Test to see if it's alive
+            if (hex instanceof ConwayHex && hex.alive) {
+                neighborCount++;
+            }
+        }
+        if (neighborCount <= lonely || neighborCount >= crowded) {
+            return new ConwayHex({ alive : false });
+        } else {
+            return new ConwayHex({ alive : true });
+        }
+    }
+
     // Create a large rectangular background. The background is
     // transparent if the cell isn't "alive", and filled with
     // steel blue if the cell is "alive"
@@ -40,6 +60,10 @@ var map = null;
 // dump button onClick event
 function dump() {
     d3.select("#json").html(JSON.stringify(map.toJson()));
+}
+
+function next() {
+    map.fromJson(map.next(), { "ConwayHex" : ConwayHex });
 }
 
 // load button onClick event
