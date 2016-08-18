@@ -70,7 +70,7 @@ class Hex {
     }
 }
 
-HexMap = function(svgSelector, options) {
+HexMap = function(svgSelector, props) {
     var _radius = 60;
     var _dRow = 120;
     var _dColX = 180;
@@ -83,13 +83,16 @@ HexMap = function(svgSelector, options) {
     var _innerHex = "";
     var _svg = null;
     var _hex = Hex;
+    var _gridVertical = "";
+    var _gridDiagonal = "";
 
     this.constructors = { "Hex" : Hex },
     this.autodraw = true;
-    this.edgeClick = true;
-    this.hexClick = true;
-    this.renderEdges = true;
+    this.edgeClicks = false;
+    this.hexClicks = true;
+    this.renderEdges = false;
     this.renderHexes = true;
+    this.drawGrid = true;
 
    // radius property, radius or edge length of hexagon
     Object.defineProperty(HexMap.prototype, 'radius', {
@@ -140,6 +143,14 @@ HexMap = function(svgSelector, options) {
         return string;
     }
 
+    // Build grid vertical path
+    function _makeGridVertical() {
+        return "M 0 " + _dColY + " L 0 " + -_dColY;
+    }
+
+    function _makeGridDiagonal() {
+        return "M " + -_radius + " " + Math.floor(_radius / 2)  + " L " + _radius + " " + Math.floor(-_radius / 2);
+    }
     // Force recomputation of constants, upon edge or radius changes
     function _recompute() {
         _dRow = _radius * Math.sqrt(3);
@@ -150,6 +161,8 @@ HexMap = function(svgSelector, options) {
         _hexString = _buildHexString();
         _trapezoid = _makeTrapezoid();
         _innerHex = _makeInnerHex();
+        _gridVertical = _makeGridVertical();
+        _gridDiagonal = _makeGridDiagonal();
     }
 
    // Returns an array of neighboring cells
@@ -333,13 +346,13 @@ HexMap = function(svgSelector, options) {
         }
 
         // Render click listener group
-        if (this.edgeClick || this.hexClick) {
+        if (this.edgeClicks || this.hexClicks) {
             var clickGroup = groups.append("g");
             clickGroup.attr("hex-role", "click-zones");
         }
 
         // Render edge click regions
-        if (this.edgeClick) {
+        if (this.edgeClicks) {
             for (var i in _offsets) {
                 clickGroup.append("path")
                     .attr("blah", "blah")
@@ -355,7 +368,7 @@ HexMap = function(svgSelector, options) {
         }
 
         // Render inside hex click region
-        if (this.hexClick) {
+        if (this.hexClicks) {
             clickGroup.append("path")
                 .attr("d", _innerHex)
                 .attr("stroke", "none")
@@ -364,6 +377,26 @@ HexMap = function(svgSelector, options) {
                 .attr("hex-role", "hex-click-zone")
                 .on("click", function(d, i) { d.click.apply(d); });
         }   
+
+        // Render a grid for coordinate system.
+        // Not very accurate right now, but really only for debugging purposes
+        if (this.drawGrid) {
+            var grid = groups.append("g")
+                .attr("hex-role", "grid");
+            grid.append("text")
+                .attr("text-anchor", "end")
+                .attr("font-size", Math.floor(_radius / 4))
+                .attr("transform", "translate(-3 " + Math.floor(-radius / 6) + ")" )
+                .text( function(d) { return "(" + d.x + ", " + d.y + ")" } );
+            grid.append("path")
+                .attr("stroke", "black")
+                .attr("stroke-width", 2)
+                .attr("d", _gridVertical);
+            grid.append("path")
+                .attr("stroke", "black")
+                .attr("stroke-width", 1)
+                .attr("d", _gridDiagonal);
+        }
     }
 
     // Creates the "next state" of the automaton by calling each
@@ -375,6 +408,7 @@ HexMap = function(svgSelector, options) {
         var saveDraw = this.autodraw;
         this.autodraw = false;
         var nextMap = { };
+        var now = new Date().getTime();
         for (var key in _map) {
             current = _map[key];
             var newHex = current.next(this.neighbors(current.x, current.y));
@@ -386,24 +420,23 @@ HexMap = function(svgSelector, options) {
             }
             nextMap[key] = newHex.dump();
         }
-        
         this.autodraw = saveDraw;
         return nextMap;
     }
 
     _svg = d3.select(svgSelector);
 
-    // Grab user options
-    if (options) {
-        for (var key in options) {
+    // Grab user supplied properties
+    if (props) {
+        for (var key in props) {
             // Union the constructors dictionary with the default constructors dictionary
             if (key === "constructors") {
-                var userdict = options.constructors;
+                var userdict = props.constructors;
                 for (var dict in userdict) {
                     this.constructors[dict] = userdict[dict];
                 }
             } else {
-                this[key] = options[key];
+                this[key] = props[key];
             }
         }
     }
