@@ -17,6 +17,11 @@ class ConwayHex extends Hex {
         this.draw();
     }
 
+    // An edgeClick listener that prints the offset of the edge
+    // and this Hex.
+    //
+    // To see this example, add edgeClicks : true to the properties
+    // initializer object.
     edgeClick(dx, dy) {
         console.log("Edge click, with offset " + dx, "," + dy, this);
     }
@@ -64,6 +69,9 @@ class ConwayHex extends Hex {
     }
 
     // Render a rainbow border around the Hexagon
+    //
+    // To see this example, add renderEdges : true to the properties
+    // initializer object.
     renderEdge(dx, dy) {
         var g = d3.select(document.createElement("g"));
         var pair = dx + "," + dy;
@@ -88,9 +96,15 @@ class ConwayHex extends Hex {
 
 var map = null;
 
+// next button onClick event
+//
+// Creates the next state with a call to map.next()
+// The new state is loaded into the HexMap.
+// Additionally, it is output to the HTML textarea.
 function next() {
-    map.fromJson(map.next());
-    d3.select("#json").html(JSON.stringify(map.toJson(), null, "\t"));
+    var nextState = map.next();
+    map.fromJson(nextState);
+    d3.select("#json").html(JSON.stringify(nextState, null, "\t"));
 }
 
 // load button onClick event
@@ -108,13 +122,14 @@ document.addEventListener("DOMContentLoaded", function(event) {
     const radius = Math.min(document.body.clientWidth * 0.6 / columns / 2, document.body.clientHeight * 1.0 / rows / 2);
     const edge = 5;
 
+    // properties initializer object
     var properties = { 
         radius : radius,
         edge : edge,
+        hex : ConwayHex,
         constructors : { "ConwayHex" : ConwayHex }
     };
     map = new HexMap("#hexmap", properties); 
-    map.hex = ConwayHex;
     map.buildRect(columns, rows);
     map.draw();
 });
