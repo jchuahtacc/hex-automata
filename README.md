@@ -102,6 +102,10 @@ To create an automaton that generates new states, you must:
 </script>
 ```
 
+### Example
+
+An [example implementation](./example/index.html) of this library is available. It implements a Conway's Game of Life style automaton, with cells that are alive or dead based on the number of alive neighbors.
+
 ### Full Documentation
 
 Additional [documentation](./REFERENCE.md) on this API is available.
